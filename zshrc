@@ -42,5 +42,4 @@ if [ -d /usr/class/cs143/cool/bin ]; then
 fi
 
 # zsh-autosuggestions bindkey
-bindkey '^
-' autosuggest-execute
+bindkey '^j' autosuggest-execute
