@@ -100,3 +100,5 @@ set backupdir^=~/.vim/backup//
 " persist the undo tree for each file
 set undofile
 set undodir^=~/.vim/undo//
+set undolevels=1000
+set undoreload=10000

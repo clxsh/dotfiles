@@ -91,6 +91,12 @@ install_sec_tools() {
     sudo gem install one_gadget
 }
 
+mkdir_for_vim() {
+    mkdir -p $HOME/.vim/undo
+    mkdir -p $HOME/.vim/swap
+    mkdir -p $HOME/.vim/backup
+}
+
 finish() {
     echo "==========================================================="
     echo "> Do not forget run those things:"
@@ -103,4 +109,5 @@ start
 install_linux_packages
 setup_omz
 install_sec_tools
+mkdir_for_vim
 finish
