@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# repair "zsh: corrupt history file"
+cd ~
+mv .histfile .histfile.bad
+strings .histfile.bad > .histfile
+rm .histfile.bad
+
