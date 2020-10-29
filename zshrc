@@ -43,3 +43,14 @@ fi
 
 # zsh-autosuggestions bindkey
 bindkey '^j' autosuggest-execute
+
+# nodejs relavant
+NVM_NODEJS_ORG_MIRROR=http://npm.taobao.org/mirrors/node
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# proxy git if wsl
+if uname -r | grep -qF microsoft; then
+    proxy_git
+fi

@@ -1,15 +1,20 @@
 #!/bin/bash
 
-EnvVersion="WSL Ubuntu"
+EnvVersion="Ubuntu"
 
 start () {
+    clear
+    proxyip=$(ip route | grep default | awk '{print $3}')     # work for wsl and vmware NAT mode
+    proxyip="${proxyip%?}1"                                   # replace the last char to '1' for vmware
+    export ALL_PROXY="http://${proxyip}:7890"
+    export all_proxy="http://${proxyip}:7890"
+    echo "Set proxy: ${ALL_PROXY}"
+    check_ip
     echo "==========================================================="
     echo ""
-    echo -n "* The setup will begin in 5 seconds... "
+    echo "* The setup will begin in 5 seconds... "
     sleep 5
-    echo -n "Times up! Here we start!"
-    echo ""
-    clear
+    echo "Times up! Here we start!"
     cd $HOME
 }
 
@@ -25,6 +30,7 @@ install_linux_packages() {
     sudo apt-get install -y zsh curl wget git tree unzip tmux net-tools
     sudo apt-get install -y screenfetch autojump global htop feh
     sudo apt-get install -y shellcheck ripgrep fd-find
+    sudo apt-get install -y qemu-user gdb gdb-multiarch
 
     sudo ln -s /usr/bin/fdfind /usr/bin/fd
     python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
@@ -58,6 +64,15 @@ setup_omz() {
 }
 
 install_sec_tools() {
+    echo "-----------------------------------------------------------"
+    echo "* Installing sec tools:"
+    echo ""
+    echo "  - pwntools"
+    echo "  - pwndbg"
+    echo "  - LibcSearcher"
+    echo "  - one_gadget"
+    echo "-----------------------------------------------------------"
+
     if [! -d ${HOME}/src ]; then
         mkdir ${HOME}/src
     fi
@@ -95,6 +110,26 @@ mkdir_for_vim() {
     mkdir -p $HOME/.vim/undo
     mkdir -p $HOME/.vim/swap
     mkdir -p $HOME/.vim/backup
+}
+
+# Copy from SukkaW/zsh-proxy: https://github.com/SukkaW/zsh-proxy
+check_ip() {
+    echo "==========================================================="
+    echo "Check what your IP is"
+    echo "-----------------------------------------------------------"
+    echo -n "IPv4: "
+    curl -s -k https://api-ipv4.ip.sb/ip
+    echo "-----------------------------------------------------------"
+    echo -n "IPv6: "
+    curl -s -k http://api-ipv6.ip.sb/ip
+
+    if command -v python3 >/dev/null; then
+        echo ""
+        echo "-----------------------------------------------------------"
+        echo "Info: "
+        curl -s -k https://api.ip.sb/geoip | python3 -m json.tool
+        echo ""
+    fi
 }
 
 finish() {

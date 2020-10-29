@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dotfiles_array=(inputrc vimrc zshrc p10k.zsh)
+dotfiles_array=(inputrc vimrc zshrc p10k.zsh repair)
 
 # create symbolic link
 create_link() {
