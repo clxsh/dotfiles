@@ -9,6 +9,7 @@ proxy_git() {
     proxyip=${proxyip%?}"1"                                   # replace the last char to '1' for vmware 
     proxyaddr="socks5://${proxyip}:7890"
     git config --global https.proxy ${proxyaddr}
+    git config --global http.proxy ${proxyaddr}
     if ! grep -qF "Host github.com" ~/.ssh/config; then
         echo "Host github.com" >> ~/.ssh/config
         echo "    User git" >> ~/.ssh/config
