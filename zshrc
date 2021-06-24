@@ -64,3 +64,11 @@ fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# clear terminal scrollback
+function clear-scrollback {
+  clear && printf '\e[3J'
+  zle && zle .reset-prompt && zle -R
+}
+zle -N clear-scrollback
+bindkey '^L' clear-scrollback
