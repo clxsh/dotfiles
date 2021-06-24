@@ -4,8 +4,11 @@ EnvVersion="Ubuntu"
 
 start () {
     clear
-    proxyip=$(ip route | grep default | awk '{print $3}')     # work for wsl and vmware NAT mode
+    #
+    proxyip=$(ip route | grep default | awk '{print $3}')     # work for wsl2 and vmware NAT mode
     proxyip="${proxyip%?}1"                                   # replace the last char to '1' for vmware
+    #
+    # proxyip="localhost"                                       # for wsl1
     export ALL_PROXY="http://${proxyip}:7890"
     export all_proxy="http://${proxyip}:7890"
     echo "Set proxy: ${ALL_PROXY}"
@@ -30,7 +33,7 @@ install_linux_packages() {
     sudo apt-get install -y zsh curl wget git tree unzip tmux net-tools
     sudo apt-get install -y screenfetch autojump global htop feh
     sudo apt-get install -y shellcheck ripgrep fd-find
-    sudo apt-get install -y qemu-user gdb gdb-multiarch
+    # sudo apt-get install -y qemu-user gdb gdb-multiarch
 
     sudo ln -s /usr/bin/fdfind /usr/bin/fd
     python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
@@ -147,6 +150,6 @@ finish() {
 start
 install_linux_packages
 setup_omz
-install_sec_tools
+# install_sec_tools
 mkdir_for_vim
 finish
