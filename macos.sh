@@ -44,7 +44,7 @@ install_packages() {
   echo "* Install following packages:"
   echo ""
 
-  for __pkg in ${__pkg_to_be_installed}; do
+  for __pkg in ${__pkg_to_be_installed[@]}; do
     echo "  - ${__pkg}"
   done
 
@@ -52,7 +52,7 @@ install_packages() {
 
   brew update
 
-  for __pkg in ${__pkg_to_be_installed}; do
+  for __pkg in ${__pkg_to_be_installed[@]}; do
     brew install ${__pkg} || true
   done
 }
@@ -81,8 +81,9 @@ setup_omz() {
     echo "* Installing ZSH Custom Plugins & Themes:"
     echo ""
     echo "  - zsh-autosuggestions"
-    echo "  - fast-syntax-highlighting"
-    echo "  - autojump"
+    echo "  - zsh-syntax-highlighting"
+    echo "  - fzf-tab"
+    echo "  - zsh-z"
     echo "  - powerlevel10k zsh theme"
     echo "-----------------------------------------------------------"
 
