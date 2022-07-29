@@ -62,9 +62,9 @@ clone_repo() {
   echo "* Cloning clxsh/dotfiles Repo from GitHub.com"
   echo "-----------------------------------------------------------"
 
-  git clone https://github.com/clxsh/dotfiles.git
+  git clone https://github.com/clxsh/dotfiles.git .dotfiles
 
-  cd ./dotfiles
+  cd ./.dotfiles
   rm -rf .git
 }
 
@@ -110,6 +110,12 @@ vimrc() {
   echo "-----------------------------------------------------------"
 
   cat $HOME/dotfiles/vim/vimrc > $HOME/.vimrc
+}
+
+mkdir_for_vim() {
+  mkdir -p $HOME/.vim/undo
+  mkdir -p $HOME/.vim/swap
+  mkdir -p $HOME/.vim/backup
 }
 
 p10k() {
@@ -164,6 +170,7 @@ clone_repo
 setup_omz
 zshrc
 vimrc
+mkdir_for_vim
 p10k
 inputrc
 fix_home_end_keybinding
