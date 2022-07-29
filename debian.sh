@@ -122,8 +122,8 @@ zshrc() {
   echo "                  Import env zshrc                         "
   echo "-----------------------------------------------------------"
 
-  cat $HOME/dotfiles/zshrc/macos.zshrc > $HOME/.zshrc
-  cat $HOME/dotfiles/p10k/p10k.zsh > $HOME/.p10k.zsh
+  cat $HOME/.dotfiles/zshrc/macos.zshrc > $HOME/.zshrc
+  cat $HOME/.dotfiles/p10k/p10k.zsh > $HOME/.p10k.zsh
 }
 
 vimrc() {
@@ -131,7 +131,7 @@ vimrc() {
   echo "                  Import env vimrc                         "
   echo "-----------------------------------------------------------"
 
-  cat $HOME/dotfiles/vim/vimrc > $HOME/.vimrc
+  cat $HOME/.dotfiles/vim/vimrc > $HOME/.vimrc
 }
 
 mkdir_for_vim() {
@@ -145,7 +145,7 @@ p10k() {
   echo "                  Import env p10k                         "
   echo "-----------------------------------------------------------"
 
-  cat $HOME/dotfiles/p10k/p10k.zsh > $HOME/.p10k.zsh
+  cat $HOME/.dotfiles/p10k/p10k.zsh > $HOME/.p10k.zsh
 }
 
 inputrc() {
@@ -153,7 +153,7 @@ inputrc() {
   echo "                  Import env inputrc                       "
   echo "-----------------------------------------------------------"
 
-  cat $HOME/dotfiles/inputrc/inputrc > $HOME/.inputrc 
+  cat $HOME/.dotfiles/inputrc/inputrc > $HOME/.inputrc 
 }
 
 # Copy from SukkaW/zsh-proxy: https://github.com/SukkaW/zsh-proxy
