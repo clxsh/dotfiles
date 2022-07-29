@@ -7,7 +7,7 @@ fi
 
 export ZSH="/Users/liuchao.franklin/.oh-my-zsh"
 export EDITOR=vim
-dotpath="${HOME}/mysrc/dotfiles"
+dotpath="${HOME}/.dotfiles"
 
 ZSH_THEME="powerlevel10k/powerlevel10k"
 [[ ! -f $HOME/.p10k.zsh ]] || source $HOME/.p10k.zsh
