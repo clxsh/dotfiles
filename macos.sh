@@ -6,26 +6,26 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
 fi
 
 start() {
-    clear
+  clear
 
-    echo    "  YOU ARE SETTING UP macOS Environment"
-    echo ""
-    echo -n "* The setup will begin in 5 seconds... "
+  echo    "  YOU ARE SETTING UP macOS Environment"
+  echo ""
+  echo -n "* The setup will begin in 5 seconds... "
 
-    sleep 5
+  sleep 5
 
-    echo -n "Times up! Here we start!"
-    echo ""
+  echo -n "Times up! Here we start!"
+  echo ""
 
-    cd $HOME
+  cd $HOME
 }
 
 # xcode command tool will be installed during homebrew installation
 install_homebrew() {
-    echo "==========================================================="
-    echo "                     Install Homebrew                      "
-    echo "-----------------------------------------------------------"
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+  echo "==========================================================="
+  echo "                     Install Homebrew                      "
+  echo "-----------------------------------------------------------"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 }
 
 install_packages() {
@@ -69,30 +69,30 @@ clone_repo() {
 }
 
 setup_omz() {
-    echo "==========================================================="
-    echo "                      Shells Enviroment"
-    echo "-----------------------------------------------------------"
-    echo "* Installing Oh-My-Zsh..."
-    echo "-----------------------------------------------------------"
+  echo "==========================================================="
+  echo "                      Shells Enviroment"
+  echo "-----------------------------------------------------------"
+  echo "* Installing Oh-My-Zsh..."
+  echo "-----------------------------------------------------------"
 
-    curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh | bash
 
-    echo "-----------------------------------------------------------"
-    echo "* Installing ZSH Custom Plugins & Themes:"
-    echo ""
-    echo "  - zsh-autosuggestions"
-    echo "  - zsh-syntax-highlighting"
-    echo "  - fzf-tab"
-    echo "  - zsh-z"
-    echo "  - powerlevel10k zsh theme"
-    echo "-----------------------------------------------------------"
+  echo "-----------------------------------------------------------"
+  echo "* Installing ZSH Custom Plugins & Themes:"
+  echo ""
+  echo "  - zsh-autosuggestions"
+  echo "  - zsh-syntax-highlighting"
+  echo "  - fzf-tab"
+  echo "  - zsh-z"
+  echo "  - powerlevel10k zsh theme"
+  echo "-----------------------------------------------------------"
 
-    git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-    git clone https://github.com/Aloxaf/fzf-tab ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab
-    git clone https://github.com/agkozak/zsh-z ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-z
+  git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+  git clone https://github.com/Aloxaf/fzf-tab ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab
+  git clone https://github.com/agkozak/zsh-z ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-z
 
-    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
 }
 
 zshrc() {
@@ -110,6 +110,22 @@ vimrc() {
   echo "-----------------------------------------------------------"
 
   cat $HOME/dotfiles/vim/vimrc > $HOME/.vimrc
+}
+
+p10k() {
+  echo "==========================================================="
+  echo "                  Import env p10k                         "
+  echo "-----------------------------------------------------------"
+
+  cat $HOME/dotfiles/p10k/p10k.zsh > $HOME/.p10k.zsh
+}
+
+inputrc() {
+  echo "==========================================================="
+  echo "                  Import env inputrc                       "
+  echo "-----------------------------------------------------------"
+
+  cat $HOME/dotfiles/inputrc/inputrc > $HOME/.inputrc 
 }
 
 fix_home_end_keybinding() {
@@ -148,5 +164,7 @@ clone_repo
 setup_omz
 zshrc
 vimrc
+p10k
+inputrc
 fix_home_end_keybinding
 finish
