@@ -36,6 +36,17 @@ install_linux_packages() {
   # gem sources --add https://mirrors.tuna.tsinghua.edu.cn/rubygems/ --remove https://rubygems.org
 }
 
+clone_repo() {
+  echo "-----------------------------------------------------------"
+  echo "* Cloning clxsh/dotfiles Repo from GitHub.com"
+  echo "-----------------------------------------------------------"
+
+  git clone https://github.com/clxsh/dotfiles.git .dotfiles
+
+  cd ./.dotfiles
+  rm -rf .git
+}
+
 setup_omz() {
   echo "==========================================================="
   echo "                      Shells Enviroment"
@@ -175,6 +186,7 @@ finish() {
 
 start
 install_linux_packages
+clone_repo
 setup_omz
 # install_sec_tools
 zshrc
