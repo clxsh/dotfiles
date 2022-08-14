@@ -5,7 +5,7 @@ EnvVersion="Debian derivative"
 start() {
   clear
     
-  echo    "  YOU ARE SETTING UP macOS Environment"
+  echo    "  YOU ARE SETTING UP debian-like Environment"
   echo ""
   echo "==========================================================="
   echo ""
@@ -26,7 +26,7 @@ install_linux_packages() {
   sudo apt-get install -y build-essential libssl-dev libffi-dev
   sudo apt-get install -y zsh curl wget git tree unzip tmux net-tools
   sudo apt-get install -y screenfetch global htop feh
-  sudo apt-get install -y shellcheck ripgrep fd-find
+  sudo apt-get install -y shellcheck ripgrep fd-find jq
   sudo apt-get install -y qemu-user gdb gdb-multiarch
   
   sudo ln -s /usr/bin/fdfind /usr/bin/fd
@@ -72,6 +72,12 @@ setup_omz() {
   git clone https://github.com/agkozak/zsh-z ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-z
 
   git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+
+  fzf_tag=$(curl https://api.github.com/repos/junegunn/fzf/releases/latest | jq -r ".tag_name")
+  wget https://github.com/junegunn/fzf/releases/download/${fzf_tag}/fzf-${fzf_tag}-linux_amd64.tar.gz
+  tar xf fzf-${fzf_tag}-linux_amd64.tar.gz
+  sudo mv fzf /usr/loca/bin/
+  rm fzf-${fzf_tag}-linux_amd64.tar.gz
 }
 
 install_sec_tools() {
