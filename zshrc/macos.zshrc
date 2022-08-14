@@ -19,9 +19,9 @@ HISTFILE=~/.histfile
 HIST_STAMPS="yyyy-mm-dd"
 plugins=(
     git
+    fzf-tab
     zsh-autosuggestions
     zsh-syntax-highlighting
-    fzf-tab
     zsh-z
     )
 source $ZSH/oh-my-zsh.sh
