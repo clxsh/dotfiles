@@ -76,7 +76,7 @@ setup_omz() {
   fzf_tag=$(curl https://api.github.com/repos/junegunn/fzf/releases/latest | jq -r ".tag_name")
   wget https://github.com/junegunn/fzf/releases/download/${fzf_tag}/fzf-${fzf_tag}-linux_amd64.tar.gz
   tar xf fzf-${fzf_tag}-linux_amd64.tar.gz
-  sudo mv fzf /usr/loca/bin/
+  sudo mv fzf /usr/local/bin/
   rm fzf-${fzf_tag}-linux_amd64.tar.gz
 }
 
