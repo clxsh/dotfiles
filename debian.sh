@@ -73,11 +73,13 @@ setup_omz() {
 
   git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
 
-  fzf_tag=$(curl https://api.github.com/repos/junegunn/fzf/releases/latest | jq -r ".tag_name")
-  wget https://github.com/junegunn/fzf/releases/download/${fzf_tag}/fzf-${fzf_tag}-linux_amd64.tar.gz
-  tar xf fzf-${fzf_tag}-linux_amd64.tar.gz
-  sudo mv fzf /usr/local/bin/
-  rm fzf-${fzf_tag}-linux_amd64.tar.gz
+  fzf_tag_name=$(curl https://api.github.com/repos/junegunn/fzf/releases/latest | jq -r ".tag_name")
+  fzf_name=$(curl https://api.github.com/repos/junegunn/fzf/releases/latest | jq -r ".name")
+  wget https://github.com/junegunn/fzf/releases/download/${fzf_tag_name}/fzf-${fzf_name}-linux_amd64.tar.gz
+  tar xf fzf-${fzf_name}-linux_amd64.tar.gz
+  mkdir -p $HOME/bin
+  mv fzf $HOME/bin/
+  rm fzf-${fzf_name}-linux_amd64.tar.gz
 }
 
 install_sec_tools() {
