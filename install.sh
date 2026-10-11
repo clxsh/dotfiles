@@ -147,9 +147,9 @@ finish() {
     echo "==========================================================="
 }
 
-start
-install_linux_packages
+# start
+# install_linux_packages
 setup_omz
 # install_sec_tools
-mkdir_for_vim
-finish
+# mkdir_for_vim
+# finish
