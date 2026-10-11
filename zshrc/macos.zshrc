@@ -5,12 +5,11 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-export ZSH="$HOME/.oh-my-zsh"
+export ZSH="${ZSH:-$HOME/.oh-my-zsh}"
 export EDITOR=vim
-dotpath="${HOME}/.dotfiles"
+dotpath="${DOTFILES_DIR:-${HOME}/.dotfiles}"
 
 ZSH_THEME="powerlevel10k/powerlevel10k"
-[[ ! -f $HOME/.p10k.zsh ]] || source $HOME/.p10k.zsh
 
 DISABLE_MAGIC_FUNCTIONS="true"
 COMPLETION_WAITING_DOTS="true"
@@ -24,11 +23,13 @@ plugins=(
     zsh-syntax-highlighting
     zsh-z
     )
-source $ZSH/oh-my-zsh.sh
+source "$ZSH/oh-my-zsh.sh"
 
 # Aliases and functions
-source ${dotpath}/aliases.sh
-source ${dotpath}/functions.sh
+source "${dotpath}/aliases.sh"
+source "${dotpath}/functions.sh"
+# Use macOS's built-in ls; GNU --color is not supported by BSD ls.
+alias ls='ls -G'
 
 # Vi mode
 bindkey -v
@@ -53,11 +54,10 @@ fi
 # zsh-autosuggestions bindkey
 bindkey '^j' autosuggest-execute
 
-# nodejs relavant
-# NVM_NODEJS_ORG_MIRROR=http://npm.taobao.org/mirrors/node
-# export NVM_DIR="$HOME/.nvm"
-# [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-# [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# Initialize the Node version manager when available.
+if command -v fnm >/dev/null 2>&1; then
+    eval "$(fnm env --use-on-cd --shell zsh)"
+fi
 
 # proxy git if wsl
 if uname -r | grep -qF microsoft; then
