@@ -84,6 +84,16 @@ cproxy
 
 Mac 上需要 TUN 时可执行 `cproxy tun`，或在自己的 shell 环境设置 `DOTFILES_PROXY_MODE=tun`；默认的显式 `cproxy` 使用方式保持兼容。
 
+## 私有凭据
+
+仓库不保存 API key 或 token。请在仓库外的 `~/.zshenv` 中自行设置并导出环境变量，文件权限建议为 `600`：
+
+- `kc` 使用 `KIMI_API_KEY`。
+- `zc` 使用 `ZHIPU_API_KEY`。
+- 其他工具需要的 `ARK_API_KEY`、`INFERENCE_BE_TOKEN` 也由本机环境提供。
+
+`kc`、`zc` 在执行时读取对应变量；未设置时会提示并停止，不会启动 Claude。不要将私有配置或实际凭据复制回仓库。
+
 ## 验证
 
 ```sh

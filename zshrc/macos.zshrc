@@ -101,9 +101,7 @@ export PATH="/Users/liuchao/go/bin:$PATH"
 # export BYTED_HOST_IPV6=::1
 # export MY_HOST_IPV6=::1
 
-export ARK_API_KEY="REMOVED_SECRET"
 export ARK_ENDPOINT_ID="ep-20260206102824-c7xmf"
-export INFERENCE_BE_TOKEN="REMOVED_SECRET"
 
 export no_proxy=localhost,127.0.0.1,::1,.local,.byted.org,.bytedance.com,.bytedance.net,.feishu.cn,.feishu.com
 export NO_PROXY=$no_proxy
