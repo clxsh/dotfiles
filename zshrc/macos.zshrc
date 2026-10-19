@@ -29,6 +29,7 @@ plugins=(
     zsh-z
     )
 source "$ZSH/oh-my-zsh.sh"
+[[ -r "$HOME/.p10k.zsh" ]] && source "$HOME/.p10k.zsh"
 
 # Aliases and functions
 source "${dotpath}/aliases.sh"
