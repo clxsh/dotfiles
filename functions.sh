@@ -3,21 +3,10 @@ mcd() {
     mkdir "${1}" && cd "${1}"
 }
 
-# proxy git
+# Compatibility helper: Git HTTP(S) uses these environment variables.
+# Never guess a gateway or persist changes to Git/SSH configuration.
 proxy_git() {
-    proxyip=$(ip route | grep default | awk '{print $3}')     # work for wsl and vmware NAT mode
-    proxyip=${proxyip%?}"1"                                   # replace the last char to '1' for vmware 
-    proxyaddr="socks5://${proxyip}:7890"
-    git config --global https.proxy ${proxyaddr}
-    git config --global http.proxy ${proxyaddr}
-    if ! grep -qF "Host github.com" ~/.ssh/config; then
-        echo "Host github.com" >> ~/.ssh/config
-        echo "    User git" >> ~/.ssh/config
-        echo "    ProxyCommand nc -X 5 -x ${proxyip}:7890 %h %p" >> ~/.ssh/config
-    else
-        lino=$(($(awk '/Host github.com/{print NR}' ~/.ssh/config)+2))
-        sed -i "${lino}c\    ProxyCommand nc -X 5 -x ${proxyip}:7890 %h %p" ~/.ssh/config
-    fi
+    cproxy "$@"
 }
 
 porth() {
@@ -37,19 +26,24 @@ boebe() {
     export MY_HOST_IPV6=::1
 }
 
+# Explicit proxy selection. With no mode configured, preserve the Mac cproxy defaults.
 cproxy() {
-    export http_proxy=http://127.0.0.1:7897
-    export https_proxy=http://127.0.0.1:7897
-    export all_proxy=socks5://127.0.0.1:7898
-    
-    export HTTP_PROXY=$http_proxy
-    export HTTPS_PROXY=$https_proxy
-    export ALL_PROXY=$all_proxy
-    
-    export no_proxy=localhost,127.0.0.1,::1,.local,.byted.org,.bytedance.com,.bytedance.net,.feishu.cn,.feishu.com
-    export NO_PROXY=$no_proxy
-    export TZ="America/Los_Angeles"
-    export LANG="en_US.UTF-8"
-    export LC_ALL="en_US.UTF-8"
-    export LANGUAGE="en_US"
+    local mode="${1:-${DOTFILES_PROXY_MODE:-manual}}"
+    case "$mode" in
+        tun|off)
+            unset http_proxy https_proxy all_proxy HTTP_PROXY HTTPS_PROXY ALL_PROXY ftp_proxy FTP_PROXY
+            ;;
+        manual|on)
+            export http_proxy="${DOTFILES_HTTP_PROXY-http://127.0.0.1:7897}"
+            export https_proxy="${DOTFILES_HTTPS_PROXY-$http_proxy}"
+            export all_proxy="${DOTFILES_ALL_PROXY-${DOTFILES_HTTP_PROXY-socks5://127.0.0.1:7898}}"
+            export HTTP_PROXY="$http_proxy" HTTPS_PROXY="$https_proxy" ALL_PROXY="$all_proxy"
+            export no_proxy="${DOTFILES_NO_PROXY-${no_proxy-${NO_PROXY-localhost,127.0.0.1,::1,.local,.byted.org,.bytedance.com,.bytedance.net,.feishu.cn,.feishu.com}}}"
+            export NO_PROXY="$no_proxy"
+            mode=manual
+            ;;
+        inherit) ;;
+        *) printf 'Usage: cproxy [manual|tun|off|inherit]\n' >&2; return 2 ;;
+    esac
+    export DOTFILES_PROXY_MODE="$mode"
 }

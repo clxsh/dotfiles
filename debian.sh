@@ -1,205 +1,126 @@
 #!/bin/bash
+# Debian/Ubuntu setup. Run as the user whose shell should be configured.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+source "$SCRIPT_DIR/lib/setup.sh"
 
-EnvVersion="Debian derivative"
+usage() {
+  cat <<'USAGE'
+Usage: ./debian.sh [--configure-only] [--skip-packages] [--with-dev] [--with-security]
+                   [--proxy-mode tun|off|manual|inherit]
+  Default: install missing shell dependencies, plugins and user configuration.
+  --configure-only Install configuration only; do not install packages or download plugins.
+  --skip-packages  Require existing dependencies; never invoke apt/sudo.
+  --with-dev      Add build-essential, Python venv/pipx, vim, tmux, jq, rg and fd.
+  --with-security Add gdb, gdb-multiarch and qemu-user (no global pip installs).
+  --proxy-mode    Persist an explicit shell proxy mode; tun/off clear proxy variables.
+Run ./configure.sh to install configuration only, without packages or downloads.
+USAGE
+}
 
-start() {
-  clear
-    
-  echo    "  YOU ARE SETTING UP debian-like Environment"
-  echo ""
-  echo "==========================================================="
-  echo ""
-  echo "* The setup will begin in 5 seconds... "
-  sleep 5
-  echo "Times up! Here we start!"
-  cd $HOME
+run_apt() {
+  if [[ "$EUID" -eq 0 ]]; then
+    env DEBIAN_FRONTEND=noninteractive apt-get "$@"
+  else
+    command -v sudo >/dev/null 2>&1 || die 'Missing packages require root or sudo; install them first or use --skip-packages.'
+    sudo -n --preserve-env=http_proxy,https_proxy,all_proxy,HTTP_PROXY,HTTPS_PROXY,ALL_PROXY,no_proxy,NO_PROXY \
+      env DEBIAN_FRONTEND=noninteractive apt-get "$@"
+  fi
 }
 
 install_linux_packages() {
-  echo "==========================================================="
-  echo "* Install following packages:"
-  echo "-----------------------------------------------------------"
-  
-  sudo apt-get update
-  sudo apt-get install -y python3 python3-dev python3-pip python3-setuptools
-  # sudo apt-get install -y ruby
-  sudo apt-get install -y build-essential libssl-dev libffi-dev
-  sudo apt-get install -y zsh curl wget git tree unzip tmux net-tools
-  sudo apt-get install -y screenfetch global htop feh
-  sudo apt-get install -y shellcheck ripgrep fd-find jq
-  sudo apt-get install -y qemu-user gdb gdb-multiarch
-  
-  sudo ln -s /usr/bin/fdfind /usr/bin/fd
-  python3 -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
-  python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-  sudo python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-  # gem sources --add https://mirrors.tuna.tsinghua.edu.cn/rubygems/ --remove https://rubygems.org
-}
-
-clone_repo() {
-  echo "-----------------------------------------------------------"
-  echo "* Cloning clxsh/dotfiles Repo from GitHub.com"
-  echo "-----------------------------------------------------------"
-
-  git clone https://github.com/clxsh/dotfiles.git .dotfiles
-
-  cd ./.dotfiles
-  rm -rf .git
-}
-
-setup_omz() {
-  echo "==========================================================="
-  echo "                      Shells Enviroment"
-  echo "-----------------------------------------------------------"
-  echo "* Installing Oh-My-Zsh..."
-  echo "-----------------------------------------------------------"
-  
-  curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh | bash
-
-  echo "-----------------------------------------------------------"
-  echo "* Installing ZSH Custom Plugins & Themes:"
-  echo ""
-  echo "  - zsh-autosuggestions"
-  echo "  - zsh-syntax-highlighting"
-  echo "  - fzf-tab"
-  echo "  - zsh-z"
-  echo "  - powerlevel10k zsh theme"
-  echo "-----------------------------------------------------------"
-
-  git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-  git clone https://github.com/Aloxaf/fzf-tab ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab
-  git clone https://github.com/agkozak/zsh-z ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-z
-
-  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
-
-  fzf_tag_name=$(curl https://api.github.com/repos/junegunn/fzf/releases/latest | jq -r ".tag_name")
-  fzf_name=$(curl https://api.github.com/repos/junegunn/fzf/releases/latest | jq -r ".name")
-  wget https://github.com/junegunn/fzf/releases/download/${fzf_tag_name}/fzf-${fzf_name}-linux_amd64.tar.gz
-  tar xf fzf-${fzf_name}-linux_amd64.tar.gz
-  mkdir -p $HOME/bin
-  mv fzf $HOME/bin/
-  rm fzf-${fzf_name}-linux_amd64.tar.gz
-}
-
-install_sec_tools() {
-  echo "-----------------------------------------------------------"
-  echo "* Installing sec tools:"
-  echo ""
-  echo "  - pwntools"
-  echo "  - pwndbg"
-  echo "  - LibcSearcher"
-  echo "  - one_gadget"
-  echo "-----------------------------------------------------------"
-
-  if [! -d ${HOME}/src ]; then
-      mkdir ${HOME}/src
+  local tool package
+  local missing=() extras=(ca-certificates)
+  for tool in git zsh curl fzf; do
+    if ! tool_available "$tool"; then missing+=("$tool"); fi
+  done
+  # apt selects native binaries, including arm64/aarch64 and amd64/x86_64.
+  if [[ "$WITH_DEV" == yes ]]; then
+    extras+=(build-essential python3-venv pipx vim tmux jq ripgrep fd-find)
   fi
-  cd ${HOME}/src
-
-  # pwntools
-  python3 -m pip install --upgrade pwntools
-
-  # pwndbg
-  git clone https://github.com/pwndbg/pwndbg
-  cd pwndbg
-  ./setup.sh
-  cd ..
-
-  # LibcSearcher
-  git clone https://github.com/lieanu/LibcSearcher.git
-  cd LibcSearcher
-  sudo python3 setup.py develop
-  rm libc-database -rf
-  git clone https://github.com/niklasb/libc-database.git
-  sed -i 's|http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/|https://mirrors.tuna.tsinghua.edu.cn/ubuntu/pool/main/g/glibc/|g' libc-database/get
-  sed -i 's|get_all_debian ubuntu-eglibc http://archive.ubuntu.com/ubuntu/pool/main/e/eglibc/|# &|g' libc-database/get
-  sed -i 's|get_all_debian ubuntu-security-eglibc http://security.ubuntu.com/ubuntu/pool/main/e/eglibc/|# &|g' libc-database/get
-  sed -i 's|get_all_debian ubuntu-security-glibc http://security.ubuntu.com/ubuntu/pool/main/g/glibc/|# &|g' libc-database/get
-  sed -i 's|get_all_debian ubuntu-old-eglibc http://old-releases.ubuntu.com/ubuntu/pool/main/e/eglibc/|# &|g' libc-database/get
-  sed -i 's|get_all_debian ubuntu-old-glibc http://old-releases.ubuntu.com/ubuntu/pool/main/g/glibc/|# &|g' libc-database/get
-  ./libc-database/get ubuntu
-  cd ..
-
-  # one_gadget
-  sudo gem install one_gadget
-}
-
-zshrc() {
-  echo "==========================================================="
-  echo "                  Import env zshrc                         "
-  echo "-----------------------------------------------------------"
-
-  cat $HOME/.dotfiles/zshrc/macos.zshrc > $HOME/.zshrc
-  cat $HOME/.dotfiles/p10k/p10k.zsh > $HOME/.p10k.zsh
-}
-
-vimrc() {
-  echo "==========================================================="
-  echo "                  Import env vimrc                         "
-  echo "-----------------------------------------------------------"
-
-  cat $HOME/.dotfiles/vim/vimrc > $HOME/.vimrc
-}
-
-mkdir_for_vim() {
-  mkdir -p $HOME/.vim/undo
-  mkdir -p $HOME/.vim/swap
-  mkdir -p $HOME/.vim/backup
-}
-
-p10k() {
-  echo "==========================================================="
-  echo "                  Import env p10k                         "
-  echo "-----------------------------------------------------------"
-
-  cat $HOME/.dotfiles/p10k/p10k.zsh > $HOME/.p10k.zsh
-}
-
-inputrc() {
-  echo "==========================================================="
-  echo "                  Import env inputrc                       "
-  echo "-----------------------------------------------------------"
-
-  cat $HOME/.dotfiles/inputrc/inputrc > $HOME/.inputrc 
-}
-
-# Copy from SukkaW/zsh-proxy: https://github.com/SukkaW/zsh-proxy
-check_ip() {
-    echo "==========================================================="
-    echo "Check what your IP is"
-    echo "-----------------------------------------------------------"
-    echo -n "IPv4: "
-    curl -s -k https://api-ipv4.ip.sb/ip
-    echo "-----------------------------------------------------------"
-    echo -n "IPv6: "
-    curl -s -k http://api-ipv6.ip.sb/ip
-
-    if command -v python3 >/dev/null; then
-        echo ""
-        echo "-----------------------------------------------------------"
-        echo "Info: "
-        curl -s -k https://api.ip.sb/geoip | python3 -m json.tool
-        echo ""
+  if [[ "$WITH_SECURITY" == yes ]]; then extras+=(gdb gdb-multiarch qemu-user); fi
+  for package in "${extras[@]}"; do
+    if ! dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -qx 'install ok installed'; then
+      missing+=("$package")
     fi
+  done
+  if [[ "${#missing[@]}" -gt 0 ]]; then
+    [[ "$SKIP_PACKAGES" == no ]] || die "Missing dependencies: ${missing[*]}; install them before using --skip-packages."
+    command -v apt-get >/dev/null 2>&1 || die 'This installer requires Debian/Ubuntu apt-get.'
+    run_apt update
+    run_apt install -y --no-install-recommends "${missing[@]}"
+    hash -r
+  fi
+  for tool in git zsh curl fzf; do
+    tool_available "$tool" || die "$tool is still unusable after installation; check PATH."
+  done
 }
 
-finish() {
-    echo "==========================================================="
-    echo "> Do not forget run those things:"
-    echo ""
-    echo "- chsh -s /usr/bin/zsh"
-    echo "==========================================================="
+configure_linux() {
+  write_zshrc
+  install_user_configs
+  # Debian calls the binary fdfind. Keep /usr/bin and any existing user fd intact.
+  if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
+    if [[ ! -e "$HOME/.local/bin/fd" && ! -L "$HOME/.local/bin/fd" ]]; then
+      mkdir -p "$HOME/.local/bin"
+      ln -s "$(command -v fdfind)" "$HOME/.local/bin/fd"
+    fi
+  fi
 }
 
-start
-install_linux_packages
-clone_repo
-setup_omz
-# install_sec_tools
-zshrc
-vimrc
-mkdir_for_vim
-p10k
-inputrc
-finish
+configure_proxy() {
+  local first_line="" current_config="$ZSH_CONFIG_DIR/.zshrc"
+  if [[ -z "${DOTFILES_PROXY_MODE:-}" && -f "$current_config" ]]; then
+    IFS= read -r first_line < "$current_config" || true
+    if [[ "$first_line" == '# Generated by dotfiles/debian.sh;'* ]]; then
+      # Read only our literal mode assignment; never execute an existing user config.
+      DOTFILES_PROXY_MODE=$(sed -nE '/^export DOTFILES_PROXY_MODE=(tun|off|manual|inherit)$/ {
+        s/^export DOTFILES_PROXY_MODE=//; p; q;
+      }' "$current_config")
+    fi
+  fi
+  export DOTFILES_PROXY_MODE="${DOTFILES_PROXY_MODE:-inherit}"
+  case "$DOTFILES_PROXY_MODE" in
+    tun|off|manual|inherit) ;;
+    *) die 'DOTFILES_PROXY_MODE must be tun, off, manual or inherit.' ;;
+  esac
+  source "$SCRIPT_DIR/functions.sh"
+  cproxy "$DOTFILES_PROXY_MODE"
+}
+
+main() {
+  set -Eeuo pipefail
+  CONFIGURE_ONLY=no SKIP_PACKAGES=no WITH_DEV=no WITH_SECURITY=no
+  while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+      --configure-only) CONFIGURE_ONLY=yes ;;
+      --skip-packages) SKIP_PACKAGES=yes ;;
+      --with-dev) WITH_DEV=yes ;;
+      --with-security) WITH_SECURITY=yes ;;
+      --proxy-mode)
+        [[ "$#" -ge 2 ]] || die '--proxy-mode needs a value.'
+        export DOTFILES_PROXY_MODE="$2"; shift ;;
+      -h|--help) usage; return ;;
+      *) die "Unknown argument: $1 (see --help)" ;;
+    esac
+    shift
+  done
+  [[ "$OSTYPE" == linux* ]] || die 'This script requires Debian/Ubuntu Linux.'
+  if [[ "$CONFIGURE_ONLY" == yes && ( "$WITH_DEV" == yes || "$WITH_SECURITY" == yes ) ]]; then
+    die '--configure-only cannot be combined with package installation options.'
+  fi
+  prepare_setup debian
+  configure_proxy
+  log "Setting up Debian/Ubuntu from $SCRIPT_DIR"
+  if [[ "$CONFIGURE_ONLY" == yes ]]; then
+    tool_available zsh || die 'Install zsh first, or run ./install.sh.'
+  else
+    install_linux_packages
+    setup_omz
+  fi
+  configure_linux
+  log 'Environment setup finished. Open a new terminal to load the configuration.'
+  if [[ -n "$BACKUP_DIR" ]]; then log "Previous files are saved in: $BACKUP_DIR"; fi
+  log 'The login shell is unchanged; use chsh separately if needed.'
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then main "$@"; fi

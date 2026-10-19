@@ -3,96 +3,15 @@
 Run with: python3 -m unittest discover -s tests -v
 """
 
-import json
-import os
-from pathlib import Path
-import shutil
 import subprocess
 import sys
-import tempfile
 import unittest
 
-
-REPO = Path(__file__).resolve().parents[1]
-MARKERS = {
-    "ohmyzsh": ["oh-my-zsh.sh", "lib/completion.zsh", "tools/check_for_upgrade.sh",
-                "templates/zshrc.zsh-template"],
-    "zsh-autosuggestions": ["zsh-autosuggestions.plugin.zsh", "zsh-autosuggestions.zsh"],
-    "zsh-syntax-highlighting": ["zsh-syntax-highlighting.plugin.zsh", "zsh-syntax-highlighting.zsh"],
-    "fzf-tab": ["fzf-tab.plugin.zsh", "fzf-tab.zsh"],
-    "zsh-z": ["zsh-z.plugin.zsh"],
-    "powerlevel10k": ["powerlevel10k.zsh-theme", "internal/p10k.zsh"],
-}
-
-FAKE_TOOL = r'''
-import json, os, pathlib, shlex, sys
-tool = pathlib.Path(sys.argv[0]).name
-args = sys.argv[1:]
-state = pathlib.Path(os.environ["TEST_STATE"])
-with (state / "calls").open("a") as log:
-    log.write(json.dumps([tool] + args) + "\n")
-if tool == "brew":
-    if args == ["shellenv", "bash"] or args == ["shellenv", "zsh"]:
-        if os.environ.get("FAIL_SHELLENV"):
-            sys.exit(42)
-        print("export PATH=" + shlex.quote(os.environ["TEST_BIN"]) + ':"$PATH"')
-    elif len(args) == 2 and args[0] == "install":
-        if args[1] == os.environ.get("FAIL_INSTALL"):
-            sys.exit(43)
-        (state / ("available-" + args[1])).touch()
-    else:
-        sys.exit("Unexpected brew command: " + repr(args))
-elif args == ["--version"]:
-    if not (state / ("available-" + tool)).exists():
-        sys.exit(127)
-    print(tool + " 99.0.0")
-elif tool == "git" and args[:2] == ["clone", "--depth=1"]:
-    name = args[2].rsplit("/", 1)[-1].removesuffix(".git")
-    if name == os.environ.get("FAIL_CLONE"):
-        sys.exit(44)
-    dest = pathlib.Path(args[3])
-    markers = json.loads(os.environ["TEST_MARKERS"])[name]
-    for marker in markers:
-        path = dest / marker
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("# fixture for " + name + "\n")
-    (dest / ".git").mkdir()
-    (dest / ".git" / "fixture").write_text("preserve git metadata\n")
-elif tool == "fnm" and args == ["env", "--use-on-cd", "--shell", "zsh"]:
-    print("export FNM_FIXTURE_LOADED=yes")
-else:
-    sys.exit("Unexpected tool command: " + repr([tool] + args))
-'''
+from installer_fixture import InstallerFixture
 
 
 @unittest.skipUnless(sys.platform == "darwin", "uses macOS Bash and zsh")
-class MacOSSetupTest(unittest.TestCase):
-    def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="dotfiles tests ")
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        self.home = self.root / "home ' quoted"
-        self.home.mkdir()
-        self.repo = self.root / "repo ' quoted"
-        shutil.copytree(REPO, self.repo, ignore=shutil.ignore_patterns(".git", "__pycache__"))
-        self.bin = self.root / "bin"
-        self.bin.mkdir()
-        self.state = self.root / "state"
-        self.state.mkdir()
-        self.tmp = self.root / "tmp"
-        self.tmp.mkdir()
-        self.env = {
-            "HOME": str(self.home), "PATH": f"{self.bin}:/usr/bin:/bin:/usr/sbin:/sbin",
-            "TMPDIR": str(self.tmp), "SHELL": "/bin/zsh", "LC_ALL": "C",
-            "TEST_STATE": str(self.state), "TEST_BIN": str(self.bin),
-            "TEST_MARKERS": json.dumps(MARKERS),
-        }
-        for tool in ("brew", "curl", "git", "fnm", "jq", "wget", "fzf"):
-            path = self.bin / tool
-            path.write_text(f"#!{sys.executable}\n" + FAKE_TOOL)
-            path.chmod(0o755)
-            (self.state / ("available-" + tool)).touch()
-
+class MacOSSetupTest(InstallerFixture, unittest.TestCase):
     def run_setup(self, expect=0, prelude="", **env):
         result = subprocess.run(
             ["/bin/bash", "-c", 'source "$1"; ' + prelude + '; main' if prelude
@@ -109,20 +28,6 @@ class MacOSSetupTest(unittest.TestCase):
         self.assertEqual(list(self.tmp.iterdir()), [], output)
         self.assertEqual(list(self.home.rglob(".dotfiles-checkout.*")), [], output)
         return output
-
-    def calls(self):
-        path = self.state / "calls"
-        return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
-
-    def write(self, relative, text):
-        path = self.home / relative
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text)
-        return path
-
-    def backups(self):
-        root = self.home / ".dotfiles-backups"
-        return list(root.glob("macos-*"))
 
     def test_repeat_is_noop_and_preserves_existing_repositories(self):
         old_profile = "export KEEP_ME=yes\n"
@@ -233,6 +138,18 @@ class MacOSSetupTest(unittest.TestCase):
         self.assertTrue((framework / "oh-my-zsh.sh").is_file())
         self.assertTrue((custom / "plugins/fzf-tab/fzf-tab.plugin.zsh").is_file())
         self.assertFalse((self.home / ".zshrc").exists())
+
+    def test_configure_only_preserves_homebrew_initialization(self):
+        self.run_setup()
+        config = self.home / '.zshrc'
+        original = config.read_text()
+        first_calls = len(self.calls())
+        result = subprocess.run(['/bin/bash', str(self.repo / 'configure.sh')], env=self.env,
+                                cwd=self.root, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(config.read_text(), original)
+        self.assertFalse(any(call[:2] in (['git', 'clone'], ['brew', 'install'])
+                             for call in self.calls()[first_calls:]))
 
     def test_all_tools_available_does_not_require_homebrew(self):
         self.run_setup(prelude="find_homebrew() { return 1; }")

@@ -69,11 +69,6 @@ fi
 #   export PATH="$NODE_PATH:$PATH"
 # fi
 
-# proxy git if wsl
-if uname -r | grep -qF microsoft; then
-    proxy_git
-fi
-
 # clear terminal scrollback
 function clear-scrollback {
   clear && printf '\e[3J'
